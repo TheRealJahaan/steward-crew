@@ -84,7 +84,7 @@ say "5/5  Reading GitHub"
 
 say "Done. Next:"
 cat <<EOF
-  • Slack #maintainers:   /invite @Agent Switch   then   !invite-agent @ledger
+  • Slack #maintainers:   /invite @Agent Switch,  !follow-ups off,  !invite-agent @ledger
   • Start the Ledger:     $BIN/steward-ledger run
   • Switch Console → Templates → New template → paste
     switch/steward-crew.template.yaml → Use

@@ -53,6 +53,10 @@ does anything on GitHub that a maintainer did not approve.
   drops it.
 - **Everything is logged and undoable.** `log` shows who approved what; `undo 7`
   deletes the comment, unassigns, reopens.
+- **An AI cannot approve.** The Ledger takes orders only from people in the
+  private maintainers room (or only those listed in `policy.yaml`) and ignores
+  every agent. Switch backs this up: when the
+  Reviewer once tried "@ledger approve 11 12", Switch itself refused it.
 - **It says it is AI.** Stu introduces itself as an AI, and every GitHub comment
   ends with "Drafted by Steward Crew (AI) and approved by a maintainer."
 
@@ -63,7 +67,9 @@ its local server running, a Discord server and a Slack workspace connected to
 Switch, Claude Code signed in, and [uv](https://docs.astral.sh/uv/).
 
 1. **Make the rooms.** Post a message in Discord `#help`. In Slack
-   `#maintainers` type `/invite @Agent Switch`.
+   `#maintainers` type `/invite @Agent Switch`, then `!follow-ups off`, so
+   the AI agents there answer only when someone names them. The Ledger still
+   reads every message, which is how a plain `approve 7` reaches it.
 2. **Install.** Make a fine-grained GitHub token for your repository (Issues
    and Pull requests: read and write; Contents: read), set `repo:` in
    `policy.yaml`, then:
