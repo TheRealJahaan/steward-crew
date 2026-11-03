@@ -116,7 +116,11 @@ def test_comment_naming_a_demo_person_never_reaches_github(fake_github):
         # A note on a real issue, with no --login, that names demo people.
         by_text = db.add_proposal(conn, "comment", 4, text="Thanks @asha-dev! #4 went to the first person who asked.", reason="contested")
         by_reason = db.add_proposal(conn, "comment", 1, text="One claim at a time, please.", reason="dev-rush-2026 claimed four issues")
+        no_names = db.add_proposal(conn, "comment", 4, text="Thanks for offering!", reason="contested")
+        assert db.get_proposal(conn, no_names)["source"] == "demo"
         real = db.add_proposal(conn, "assign", 6, login="TheRealJahaan", text="Yours!", reason="asked in Discord")
+        real_note = db.add_proposal(conn, "comment", 6, text="Welcome!", reason="new here")
+        assert db.get_proposal(conn, real_note)["source"] == "github"
         assert db.get_proposal(conn, by_text)["source"] == "demo"
         assert db.get_proposal(conn, real)["source"] == "github"
         card = Ledger(Policy(), None, None).card(db.get_proposal(conn, by_text))

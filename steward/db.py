@@ -430,6 +430,16 @@ def touches_demo(conn: sqlite3.Connection, target: int, *, login: str = "", text
         return False
     if login.lstrip("@").lower() in names:
         return True
+    if not login:
+        # A note for no one in particular, on an issue the demo people are
+        # talking on, is a reply to them.
+        demo_talk = conn.execute(
+            "SELECT 1 FROM claims WHERE issue = ? AND source = 'demo'"
+            " UNION SELECT 1 FROM comments WHERE issue = ? AND source = 'demo' LIMIT 1",
+            (target, target),
+        ).fetchone()
+        if demo_talk:
+            return True
     words = {w.lower() for w in re.findall(r"[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?", f"{text}\n{reason}")}
     return bool(words & names)
 
