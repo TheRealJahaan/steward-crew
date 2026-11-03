@@ -8,6 +8,7 @@ holds a GitHub token that can act.
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 import time
 from contextlib import contextmanager
@@ -83,7 +84,8 @@ CREATE TABLE IF NOT EXISTS proposals (
     decided_by      TEXT DEFAULT '',
     announced       INTEGER DEFAULT 0,
     result          TEXT DEFAULT '',
-    undo            TEXT DEFAULT ''
+    undo            TEXT DEFAULT '',
+    source          TEXT DEFAULT 'github'
 );
 CREATE TABLE IF NOT EXISTS audit (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -110,7 +112,16 @@ def connect(path: Path | None = None) -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     conn.executescript(SCHEMA)
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Bring a database made by an older version up to the current schema."""
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(proposals)")}
+    if "source" not in columns:
+        conn.execute("ALTER TABLE proposals ADD COLUMN source TEXT DEFAULT 'github'")
+        conn.commit()
 
 
 @contextmanager
@@ -171,16 +182,20 @@ def add_proposal(
     if kind not in PROPOSAL_KINDS:
         raise ValueError(f"unknown proposal kind {kind!r}; use one of {', '.join(PROPOSAL_KINDS)}")
     login = login.lstrip("@")
-    duplicate = conn.execute(
-        "SELECT id FROM proposals WHERE kind = ? AND target = ? AND login = ? AND status = 'pending'",
-        (kind, target, login),
-    ).fetchone()
+    same = "kind = ? AND target = ? AND login = ? AND status = 'pending'"
+    params: list[Any] = [kind, target, login]
+    if kind in ("comment", "review", "close"):
+        # Two different notes on the same issue are two proposals.
+        same += " AND text = ?"
+        params.append(text)
+    duplicate = conn.execute(f"SELECT id FROM proposals WHERE {same}", params).fetchone()
     if duplicate:
         return int(duplicate["id"])
+    source = "demo" if touches_demo(conn, target, login=login, text=text, reason=reason) else "github"
     cur = conn.execute(
-        "INSERT INTO proposals(kind, target, login, text, reason, proposed_by, status, created_at)"
-        " VALUES(?, ?, ?, ?, ?, ?, 'pending', ?)",
-        (kind, target, login, text, reason, proposed_by, now()),
+        "INSERT INTO proposals(kind, target, login, text, reason, proposed_by, status, created_at, source)"
+        " VALUES(?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
+        (kind, target, login, text, reason, proposed_by, now(), source),
     )
     return int(cur.lastrowid)
 
@@ -390,19 +405,47 @@ def get_contributor(conn: sqlite3.Connection, login: str) -> dict[str, Any] | No
     return row_dict(conn.execute("SELECT * FROM contributors WHERE login = ?", (login.lstrip("@"),)).fetchone())
 
 
-def is_simulated(conn: sqlite3.Connection, proposal: dict[str, Any]) -> bool:
-    """True when a proposal touches something the demo replay made up.
+def demo_logins(conn: sqlite3.Connection) -> set[str]:
+    """Every username the demo replay made up."""
+    names: set[str] = set()
+    for table in ("contributors", "claims", "comments"):
+        names.update(r[0].lower() for r in conn.execute(f"SELECT DISTINCT login FROM {table} WHERE source = 'demo'"))
+    return names
 
-    Those are never sent to GitHub: the Ledger records them as simulated.
+
+def touches_demo(conn: sqlite3.Connection, target: int, *, login: str = "", text: str = "", reason: str = "") -> bool:
+    """True when a proposal is about something the demo replay made up.
+
+    That is: a demo issue or pull request, a demo person as the subject, or a
+    demo person named anywhere in the note or the reason. The last one matters:
+    a comment on a real issue that says "@asha-dev, thanks" must never reach
+    GitHub, where that name may belong to a stranger.
     """
-    target = proposal["target"]
     for table in ("prs", "issues"):
         row = conn.execute(f"SELECT source FROM {table} WHERE number = ?", (target,)).fetchone()
         if row and row["source"] == "demo":
             return True
-    login = (proposal.get("login") or "").lstrip("@")
-    if login:
-        row = conn.execute("SELECT source FROM contributors WHERE login = ?", (login,)).fetchone()
-        if row and row["source"] == "demo":
-            return True
-    return False
+    names = demo_logins(conn)
+    if not names:
+        return False
+    if login.lstrip("@").lower() in names:
+        return True
+    words = {w.lower() for w in re.findall(r"[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?", f"{text}\n{reason}")}
+    return bool(words & names)
+
+
+def is_simulated(conn: sqlite3.Connection, proposal: dict[str, Any]) -> bool:
+    """True when the Ledger must simulate a proposal instead of sending it to GitHub.
+
+    Decided when the proposal was filed and checked again when it is approved,
+    so removing the demo data later never turns a demo proposal into a real one.
+    """
+    if proposal.get("source") == "demo":
+        return True
+    return touches_demo(
+        conn,
+        proposal["target"],
+        login=proposal.get("login") or "",
+        text=proposal.get("text") or "",
+        reason=proposal.get("reason") or "",
+    )

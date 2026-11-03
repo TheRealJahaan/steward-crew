@@ -104,3 +104,71 @@ def test_check_token_rejects_what_is_not_a_token():
     assert check_token("", "o/r") == (False, "no GitHub token stored")
     ok, message = check_token("hunter2", "o/r")
     assert not ok and "github_pat_" in message
+
+
+def test_comment_naming_a_demo_person_never_reaches_github(fake_github):
+    from steward import demo
+
+    with db.session() as conn:
+        for n in (1, 4, 6):
+            seed_issue(conn, number=n)
+        demo.play(conn, speed=0, quiet=True)
+        # A note on a real issue, with no --login, that names demo people.
+        by_text = db.add_proposal(conn, "comment", 4, text="Thanks @asha-dev! #4 went to the first person who asked.", reason="contested")
+        by_reason = db.add_proposal(conn, "comment", 1, text="One claim at a time, please.", reason="dev-rush-2026 claimed four issues")
+        real = db.add_proposal(conn, "assign", 6, login="TheRealJahaan", text="Yours!", reason="asked in Discord")
+        assert db.get_proposal(conn, by_text)["source"] == "demo"
+        assert db.get_proposal(conn, real)["source"] == "github"
+        card = Ledger(Policy(), None, None).card(db.get_proposal(conn, by_text))
+        assert "simulated" in card
+    ledger = Ledger(Policy(), None, fake_github)
+    assert "simulated" in ledger.handle("Jahaan", f"approve {by_text} {by_reason}")
+    assert fake_github.calls == []
+    assert ledger.handle("Jahaan", f"approve {real}").startswith(f"Done P{real}")
+    assert ("assign", 6, "TheRealJahaan") in fake_github.calls
+
+
+def test_demo_reset_never_turns_a_demo_proposal_real(fake_github):
+    from steward import demo
+
+    with db.session() as conn:
+        seed_issue(conn, number=4)
+        demo.play(conn, speed=0, quiet=True)
+        pid = db.add_proposal(conn, "assign", 4, login="kofi-codes", text="Hi @kofi-codes", reason="asked first")
+        demo.reset(conn)
+        assert db.get_proposal(conn, pid) is None
+        # Even if one survived, the stored mark keeps it simulated.
+        conn.execute(
+            "INSERT INTO proposals(kind, target, login, text, reason, status, created_at, source)"
+            " VALUES('comment', 4, '', 'hi', 'r', 'pending', 0, 'demo')"
+        )
+        left = conn.execute("SELECT id FROM proposals WHERE source = 'demo'").fetchone()[0]
+    reply = Ledger(Policy(), None, fake_github).handle("Jahaan", f"approve {left}")
+    assert "simulated" in reply and fake_github.calls == []
+
+
+def test_two_different_notes_are_two_proposals():
+    with db.session() as conn:
+        seed_issue(conn)
+        a = db.add_proposal(conn, "comment", 12, text="note one", reason="r")
+        b = db.add_proposal(conn, "comment", 12, text="note two", reason="r")
+        again = db.add_proposal(conn, "comment", 12, text="note one", reason="r")
+    assert a != b and again == a
+
+
+def test_old_database_gains_the_source_column(tmp_path):
+    import sqlite3
+
+    path = tmp_path / "old.db"
+    old = sqlite3.connect(path)
+    old.execute(
+        "CREATE TABLE proposals (id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, target INTEGER NOT NULL,"
+        " login TEXT DEFAULT '', text TEXT DEFAULT '', reason TEXT DEFAULT '', proposed_by TEXT DEFAULT '',"
+        " status TEXT NOT NULL DEFAULT 'pending', created_at REAL NOT NULL, decided_at REAL, decided_by TEXT DEFAULT '',"
+        " announced INTEGER DEFAULT 0, result TEXT DEFAULT '', undo TEXT DEFAULT '')"
+    )
+    old.execute("INSERT INTO proposals(kind, target, created_at) VALUES('comment', 1, 0)")
+    old.commit()
+    old.close()
+    with db.session(path) as conn:
+        assert db.get_proposal(conn, 1)["source"] == "github"

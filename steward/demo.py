@@ -106,7 +106,7 @@ def reset(conn: sqlite3.Connection) -> int:
     removed += conn.execute("DELETE FROM issues WHERE source = 'demo'").rowcount
     placeholders = ",".join("?" * len(demo_numbers)) or "NULL"
     removed += conn.execute(
-        f"DELETE FROM proposals WHERE status = 'pending' AND (target >= 100 OR target IN ({placeholders}))",
+        f"DELETE FROM proposals WHERE status = 'pending' AND (source = 'demo' OR target >= 100 OR target IN ({placeholders}))",
         demo_numbers,
     ).rowcount
     return removed

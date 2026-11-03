@@ -266,7 +266,7 @@ def describe(p: dict[str, Any]) -> str:
     if kind == "release":
         return f"Release {who}'s claim on #{target}"
     if kind == "comment":
-        return f"Comment on #{target}"
+        return f"Comment on #{target}" + (f" for {who}" if who else "")
     if kind == "label":
         return f"Label #{target} as '{p.get('text')}'"
     if kind == "review":
@@ -303,8 +303,11 @@ def cmd_propose(args, conn, policy) -> int:
         reason=args.reason.strip(),
         proposed_by=args.by or "agent",
     )
+    proposal = db.get_proposal(conn, pid)
     print(f"P{pid}")
-    print(f"Filed [P{pid}] {describe(db.get_proposal(conn, pid))}. The Ledger will post it for a maintainer to decide.")
+    print(f"Filed [P{pid}] {describe(proposal)}. The Ledger will post it for a maintainer to decide.")
+    if proposal.get("source") == "demo":
+        print("It involves demo data, so approving it is simulated: nothing is sent to GitHub.")
     return 0
 
 

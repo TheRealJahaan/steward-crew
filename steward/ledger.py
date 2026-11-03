@@ -130,6 +130,8 @@ class Ledger:
 
     def card(self, p: dict[str, Any]) -> str:
         lines = [f"[P{p['id']}] {describe(p)}"]
+        if p.get("source") == "demo":
+            lines.append("Demo data: approving it is simulated, nothing is sent to GitHub.")
         if p.get("reason"):
             lines.append(f"Why: {p['reason']}")
         if p.get("text") and p["kind"] != "label":
