@@ -222,10 +222,10 @@ def cmd_digest(args, conn, policy) -> int:
     new_claims = [c for c in active if c["claimed_at"] >= since]
     quiet = signals.quiet_claims(active, policy, now)
     contested = signals.contested_issues(active)
-    counts: dict[str, int] = {}
+    held: dict[str, list[int]] = {}
     for c in active:
-        counts[c["login"]] = counts.get(c["login"], 0) + 1
-    over = {login: n for login, n in counts.items() if n > policy.max_open_claims}
+        held.setdefault(c["login"], []).append(c["issue"])
+    over = {login: sorted(issues) for login, issues in held.items() if len(issues) > policy.max_open_claims}
     print(f"Daily facts for {policy.repo}, since {datetime.fromtimestamp(since):%Y-%m-%d %H:%M}")
     print(f"\nNew claims ({len(new_claims)}):")
     for c in new_claims:
@@ -239,8 +239,12 @@ def cmd_digest(args, conn, policy) -> int:
     for c in quiet:
         print(f"  #{c['issue']} @{c['login']}, quiet {c['idle_hours']}h{_demo(c)}")
     print(f"\nPeople over the open-claim limit of {policy.max_open_claims} ({len(over)}):")
-    for login, n in sorted(over.items()):
-        print(f"  @{login}: {n} open claims")
+    for login, issues in sorted(over.items()):
+        where = []
+        for number in issues:
+            note = " (contested)" if number in contested else ""
+            where.append(f"#{number}{note}")
+        print(f"  @{login}: {len(issues)} open claims: {', '.join(where)}")
     print("\nOpen pull requests:")
     prs = db.open_prs(conn)
     for pr in prs:
@@ -280,6 +284,13 @@ def cmd_propose(args, conn, policy) -> int:
     text = args.text or ""
     if args.text_file:
         text = Path(args.text_file).read_text(encoding="utf-8")
+    if args.kind in ("review", "close") and (args.by or "").strip().lower() != "reviewer":
+        print(
+            "Reviews and closes are drafted by the Reviewer after it reads the pull request."
+            " Ask it in the room instead: @reviewer please look at PR #<n>: <the signals>.",
+            file=sys.stderr,
+        )
+        return 2
     if args.kind in ("assign", "release") and not args.login:
         print("assign and release need --login <github username>.", file=sys.stderr)
         return 2

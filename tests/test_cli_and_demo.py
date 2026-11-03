@@ -19,7 +19,8 @@ def test_propose_queue_and_digest(capsys):
     assert capsys.readouterr().out.startswith("P1")
     assert cli.main(["digest"]) == 0
     out = capsys.readouterr().out
-    assert "Contested issues (1)" in out and "[P1]" in out and "dev-rush-2026: 4 open claims" in out
+    assert "Contested issues (1)" in out and "[P1]" in out and "dev-rush-2026: 4 open claims: #1, #3, #5, #19" in out
+    assert "@asha-dev: 2 open claims: #4 (contested), #16" in out
 
 
 def test_propose_needs_reason_and_known_target(capsys):
@@ -36,3 +37,12 @@ def test_demo_reset_keeps_real_data():
         assert demo.reset(conn) > 0
         assert db.get_issue(conn, 4)["title"] == "real"
         assert db.open_prs(conn) == []
+
+
+def test_only_the_reviewer_drafts_reviews(capsys):
+    with db.session() as conn:
+        db.upsert_issue(conn, {"number": 4, "title": "t", "source": "github"})
+        demo.play(conn, speed=0, quiet=True)
+    assert cli.main(["propose", "review", "101", "--by", "steward", "--text", "likely spam", "--reason", "flagged"]) == 2
+    assert "@reviewer please look at PR" in capsys.readouterr().err
+    assert cli.main(["propose", "close", "101", "--by", "reviewer", "--text", "Thanks, but...", "--reason", "spam signals"]) == 0
