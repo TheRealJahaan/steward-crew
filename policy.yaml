@@ -1,0 +1,37 @@
+# Steward Crew policy. Copied to ~/.steward/policy.yaml by scripts/setup.sh;
+# edit that copy. Every rule here is applied by plain code, not by the AI.
+
+# The GitHub repository the crew looks after.
+repo: TheRealJahaan/steward-demo
+
+# People whose messages in the maintainers room the Ledger obeys.
+# Use the names Slack shows for you. Leave the list empty to accept anyone
+# in the maintainers room (it is a private channel).
+maintainers: []
+
+# Switch room names (the chat channel names) and agent names.
+rooms:
+  community: help          # Discord: contributors and Stu
+  maintainers: maintainers # Slack: maintainers, Steward, Reviewer, Ledger
+agents:
+  helper: stu
+  steward: steward
+  reviewer: reviewer
+
+claims:
+  quiet_after_hours: 48      # a claim with no activity this long is "quiet"
+  max_open_per_person: 1     # until their first merged pull request
+  newcomer_max_open: 1
+
+pull_requests:
+  large_change_lines: 400    # bigger than this for a good first issue is a flag
+  new_account_days: 14
+
+# When the Ledger asks Steward for the daily summary (24-hour clock, local time).
+digest_at: "09:00"
+
+# How often the Ledger reads GitHub, in seconds.
+sync_every_seconds: 60
+
+# Demo records (from `steward demo flood`) are never sent to GitHub.
+demo_mode: true

@@ -1,0 +1,57 @@
+{
+  "about": "A busy week on tinytask, compressed into about three minutes. Every person and pull request here is made up and marked as demo; the Ledger never sends demo actions to GitHub.",
+  "contributors": [
+    {"login": "kofi-codes", "account_age_days": 900, "merged_prs": 0},
+    {"login": "asha-dev", "account_age_days": 400, "merged_prs": 1},
+    {"login": "li-wei", "account_age_days": 1200, "merged_prs": 0},
+    {"login": "maria-s", "account_age_days": 300, "merged_prs": 0},
+    {"login": "ravi-k", "account_age_days": 700, "merged_prs": 2},
+    {"login": "nora-p", "account_age_days": 60, "merged_prs": 0},
+    {"login": "tomas-r", "account_age_days": 25, "merged_prs": 0},
+    {"login": "dev-rush-2026", "account_age_days": 2, "merged_prs": 0}
+  ],
+  "history": [
+    {"type": "claim", "issue": 9, "login": "maria-s", "hours_ago": 96, "idle_hours": 96, "text": "I'd like to work on the Windows docs, I use Windows every day."},
+    {"type": "claim", "issue": 2, "login": "ravi-k", "hours_ago": 80, "idle_hours": 70, "text": "Can I take this one? Should be quick."}
+  ],
+  "events": [
+    {"at": 0, "type": "claim", "issue": 4, "login": "kofi-codes", "text": "Hi! Can I work on this? First time contributing here."},
+    {"at": 6, "type": "claim", "issue": 4, "login": "asha-dev", "text": "I'd love to take this one, I fixed something similar in another project."},
+    {"at": 12, "type": "claim", "issue": 13, "login": "li-wei", "text": "Can I pick this up? I'll add both tests."},
+    {"at": 18, "type": "claim", "issue": 1, "login": "dev-rush-2026", "text": "assign to me"},
+    {"at": 20, "type": "claim", "issue": 3, "login": "dev-rush-2026", "text": "assign to me"},
+    {"at": 22, "type": "claim", "issue": 5, "login": "dev-rush-2026", "text": "assign to me"},
+    {"at": 24, "type": "claim", "issue": 19, "login": "dev-rush-2026", "text": "assign to me pls"},
+    {"at": 30, "type": "claim", "issue": 10, "login": "nora-p", "text": "Could I work on the CONTRIBUTING examples? Docs are a good first step for me."},
+    {"at": 40, "type": "pr", "number": 101, "author": "dev-rush-2026",
+     "title": "Enhance codebase with comprehensive improvements",
+     "body": "This PR enhances the overall code quality of the project by implementing best practices. It provides a robust and scalable, comprehensive solution that seamlessly improves maintainability.\n\nIn conclusion, these changes delve into many areas of the codebase. I hope this helps!",
+     "files": [
+       {"filename": "README.md", "additions": 140, "deletions": 60, "patch": "@@ -1,8 +1,40 @@\n-# tinytask\n+# 🚀 TinyTask: The Ultimate Task Management Solution 🚀\n+\n+## ✨ Features ✨\n+- 📝 Comprehensive task management\n+- ⚡ Blazing fast performance"},
+       {"filename": "tinytask/cli.py", "additions": 480, "deletions": 150, "patch": "@@ -1,12 +1,30 @@\n-\"\"\"The tinytask command line: add, list, done, remove and search.\"\"\"\n+\"\"\"\n+TinyTask CLI Module\n+\n+This module provides a comprehensive command-line interface...\n+\"\"\"\n+import logging\n+logger = logging.getLogger(__name__)"}
+     ]},
+    {"at": 55, "type": "comment", "issue": 4, "login": "kofi-codes", "text": "Opened a PR for this, let me know if the test looks right."},
+    {"at": 56, "type": "pr", "number": 102, "author": "kofi-codes",
+     "title": "Make search ignore upper and lower case",
+     "body": "Fixes #4\n\n`search` now lowercases both the title and the query before comparing. Added a test with mixed case.",
+     "files": [
+       {"filename": "tinytask/cli.py", "additions": 1, "deletions": 1, "patch": "@@ -70,7 +70,7 @@ def cmd_remove(args):\n def search(tasks: list[Task], text: str) -> list[Task]:\n-    return [t for t in tasks if text in t.title]\n+    return [t for t in tasks if text.lower() in t.title.lower()]"},
+       {"filename": "tests/test_cli.py", "additions": 8, "deletions": 0, "patch": "@@ -38,3 +38,11 @@ def test_search_finds_matching_title(capsys):\n+\n+def test_search_ignores_case(capsys):\n+    main([\"add\", \"Call the bank\"])\n+    capsys.readouterr()\n+    main([\"search\", \"call\"])\n+    assert \"Call the bank\" in capsys.readouterr().out"}
+     ]},
+    {"at": 80, "type": "pr", "number": 103, "author": "tomas-r",
+     "title": "fix search",
+     "body": "fixes #4",
+     "files": [
+       {"filename": "tinytask/cli.py", "additions": 3, "deletions": 1, "patch": "@@ -70,7 +70,9 @@\n def search(tasks: list[Task], text: str) -> list[Task]:\n-    return [t for t in tasks if text in t.title]\n+    import re\n+    return [t for t in tasks if re.search(text, t.title, re.I)]"}
+     ]},
+    {"at": 100, "type": "pr", "number": 104, "author": "li-wei",
+     "title": "Add tests for remove",
+     "body": "Fixes #13\n\nTwo tests: removing an existing task, and removing an id that does not exist (exit code 1).",
+     "files": [
+       {"filename": "tests/test_cli.py", "additions": 14, "deletions": 0, "patch": "@@ -45,3 +45,17 @@\n+def test_remove_existing(capsys):\n+    main([\"add\", \"temp\"])\n+    assert main([\"remove\", \"1\"]) == 0\n+    assert load_tasks() == []\n+\n+def test_remove_unknown_id():\n+    assert main([\"remove\", \"42\"]) == 1"}
+     ]},
+    {"at": 120, "type": "claim", "issue": 16, "login": "asha-dev", "text": "Since #4 has a PR already, can I take this one instead?"},
+    {"at": 140, "type": "comment", "issue": 9, "login": "nora-p", "text": "Is anyone still working on this? Happy to help if not."},
+    {"at": 160, "type": "claim", "issue": 18, "login": "tomas-r", "text": "i will work on this"}
+  ]
+}
