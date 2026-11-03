@@ -46,3 +46,8 @@ def test_only_the_reviewer_drafts_reviews(capsys):
     assert cli.main(["propose", "review", "101", "--by", "steward", "--text", "likely spam", "--reason", "flagged"]) == 2
     assert "@reviewer please look at PR" in capsys.readouterr().err
     assert cli.main(["propose", "close", "101", "--by", "reviewer", "--text", "Thanks, but...", "--reason", "spam signals"]) == 0
+
+
+def test_a_newcomer_is_not_an_error(capsys):
+    assert cli.main(["contributor", "TheRealJahaan"]) == 0
+    assert "new here" in capsys.readouterr().out

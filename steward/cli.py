@@ -201,8 +201,9 @@ def cmd_contributor(args, conn, policy) -> int:
     person = db.get_contributor(conn, login)
     now = db.now()
     if not person:
-        print(f"Steward has not seen @{login} yet.")
-        return 1
+        # Not an error: every newcomer starts here.
+        print(f"@{login} is new here: no claims, no pull requests and no comments on this project yet.")
+        return 0
     created = person.get("account_created_at")
     age = f"{(now - created) / 86400:.0f} days" if created else "unknown"
     print(f"@{login}{_demo(person)}: GitHub account age {age}, merged PRs here: {person.get('merged_prs') or 0}")
