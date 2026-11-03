@@ -61,6 +61,31 @@ def test_template_is_built_from_the_briefs():
     assert names == ["stu", "steward", "reviewer"]
     for agent in doc["agents"]:
         assert agent["directory"] == "{$agents_dir}/{agent}"
-        assert "Bash(gh:*)" in agent["advanced_config"]["disallowedTools"]
+        # Bash rules belong in Claude Code settings (steward/crew.py): in an agent
+        # definition a rule like Bash(gh:*) takes the whole Bash tool away.
+        assert not any(t.startswith("Bash") for t in agent["advanced_config"]["disallowedTools"])
         assert "Write" not in agent["advanced_config"]["tools"]
         assert agent["instructions"].strip()
+
+
+def test_crew_settings_lock_down_each_agent_folder(tmp_path, capsys):
+    import json
+
+    from steward import ledger
+
+    for name in ("stu", "steward", "reviewer"):
+        (tmp_path / "localhost-58074" / name).mkdir(parents=True)
+    assert ledger.main(["crew", "--agents-dir", str(tmp_path)]) == 0
+    settings = json.loads((tmp_path / "localhost-58074" / "stu" / ".claude" / "settings.json").read_text())
+    perms = settings["permissions"]
+    assert "Bash(~/.steward/bin/steward:*)" in perms["allow"]
+    assert "Bash(gh:*)" in perms["deny"] and "Bash(curl:*)" in perms["deny"]
+    assert "Read(~/.steward/ledger.json)" in perms["deny"]
+    assert perms["additionalDirectories"][0].endswith("project")
+
+
+def test_crew_reports_missing_agents(tmp_path, capsys):
+    from steward import ledger
+
+    assert ledger.main(["crew", "--agents-dir", str(tmp_path)]) == 1
+    assert "No folder found for: stu, steward, reviewer" in capsys.readouterr().out

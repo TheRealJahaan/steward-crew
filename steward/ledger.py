@@ -10,6 +10,7 @@ Everything it does is written to the audit log and can be undone.
     steward-ledger sync         read GitHub once into Steward's database
     steward-ledger code         fetch the project's code for the agents to read
     steward-ledger check        test the GitHub token against the repository
+    steward-ledger crew         lock down the AI agents' folders (after creating them)
     steward-ledger run          stay in the room and do the job
 """
 
@@ -417,6 +418,23 @@ def cmd_check(args) -> int:
     return 0 if ok else 1
 
 
+def cmd_crew(args) -> int:
+    from . import crew
+
+    policy = load_policy()
+    names = [policy.agent(k) for k in ("helper", "steward", "reviewer")]
+    found = crew.agent_dirs(names, Path(args.agents_dir) if args.agents_dir else None)
+    missing = [n for n, dirs in found.items() if not dirs]
+    for name, dirs in found.items():
+        for d in dirs:
+            print(f"  locked down {name}: {crew.write_settings(d)}")
+    if missing:
+        print("No folder found for: " + ", ".join(missing) + ". Create the crew from the template first.")
+        return 1
+    print("Done. The agents pick this up on their next session (type  /reset @stu  to restart one now).")
+    return 0
+
+
 def cmd_code(args) -> int:
     policy = load_policy()
     print(project.checkout(policy.repo, github_token()))
@@ -525,6 +543,9 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("sync", help="read GitHub once").set_defaults(func=cmd_sync)
     sub.add_parser("code", help="fetch the project's code for the agents").set_defaults(func=cmd_code)
     sub.add_parser("check", help="test the GitHub token").set_defaults(func=cmd_check)
+    s = sub.add_parser("crew", help="write the AI agents' permission rules")
+    s.add_argument("--agents-dir", help="default: ~/.switch/agents")
+    s.set_defaults(func=cmd_crew)
 
     s = sub.add_parser("run", help="stay in the room and work")
     s.add_argument("--quiet-start", action="store_true", help="don't post the hello message")

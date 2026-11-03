@@ -40,9 +40,10 @@ does anything on GitHub that a maintainer did not approve.
 ## Why it is safe to let AI near your contributors
 
 - **The AI cannot touch GitHub.** The agents get read, search and a shell for the
-  `steward` command, no editing tools, and the shell refuses `gh`, `git push`,
-  `curl` and the Keychain. They have no GitHub token: only the Ledger does, and
-  it keeps it in the macOS Keychain.
+  `steward` command, no editing or web tools, and Claude Code's own permission
+  rules in their folders deny `gh`, `git push`, `curl`, the Keychain and the
+  Ledger's files. They have no GitHub token: only the Ledger does, and it keeps
+  it in the macOS Keychain.
 - **Rules are code, not prompts.** "One open claim per newcomer", "a claim is
   quiet after 48 hours", "this PR is large for a good first issue" are computed
   by plain Python from `policy.yaml`. The AI explains and drafts; it does not
@@ -78,6 +79,13 @@ Switch, Claude Code signed in, and [uv](https://docs.astral.sh/uv/).
 4. **Create the AI crew.** Switch Console → Templates → New template, paste
    [`switch/steward-crew.template.yaml`](switch/steward-crew.template.yaml), Use.
    It creates Stu, Steward and the Reviewer and puts them in the two rooms.
+   Then lock down their folders:
+   ```console
+   $ ~/.steward/bin/steward-ledger crew
+   ```
+   This writes Claude Code permission rules into each agent's folder: the
+   `steward` command is allowed, and `gh`, `git push`, `curl`, the Keychain and
+   the Ledger's files are denied.
 5. **Try it.** In Discord `#help`: "@stu hi, I'm new, what can I work on?" In
    Slack: "@steward what needs me today?"
 

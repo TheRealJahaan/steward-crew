@@ -16,19 +16,12 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "switch" / "steward-crew.template.yaml"
 
 # Tools the agents may use: read, search, and the shell for the `steward`
-# command. They get no editing tools and no web tools, and the shell refuses
-# anything that could reach GitHub or the Keychain. The Ledger is the only
-# thing that can change GitHub, and it is not an AI.
-DENIED = [
-    "Bash(gh:*)",
-    "Bash(git push:*)",
-    "Bash(git commit:*)",
-    "Bash(curl:*)",
-    "Bash(wget:*)",
-    "Bash(security:*)",
-    "Bash(rm:*)",
-    "Bash(sqlite3:*)",
-]
+# command. No editing or web tools. What the shell may run is set by Claude
+# Code permission rules in each agent's folder (steward/crew.py, written by
+# `steward-ledger crew`): only `steward` is allowed outright, and gh, git
+# push, curl and the Keychain are denied. The Ledger is the only thing that
+# can change GitHub, and it is not an AI.
+DENIED = ["Write", "Edit", "NotebookEdit", "WebFetch", "WebSearch"]
 
 SKELETON = """\
 # Steward Crew: an AI crew that looks after an open-source project's contributors.

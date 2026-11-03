@@ -37,7 +37,7 @@ agents:
     join: ["{help_room}"]
     advanced_config:
       tools: [Read, Grep, Glob, Bash]
-      disallowedTools: ["Bash(gh:*)", "Bash(git push:*)", "Bash(git commit:*)", "Bash(curl:*)", "Bash(wget:*)", "Bash(security:*)", "Bash(rm:*)", "Bash(sqlite3:*)"]
+      disallowedTools: ["Write", "Edit", "NotebookEdit", "WebFetch", "WebSearch"]
       maxTurns: 25
       effort: medium
     instructions: |
@@ -92,7 +92,7 @@ agents:
     join: ["{maintainers_room}"]
     advanced_config:
       tools: [Read, Grep, Glob, Bash]
-      disallowedTools: ["Bash(gh:*)", "Bash(git push:*)", "Bash(git commit:*)", "Bash(curl:*)", "Bash(wget:*)", "Bash(security:*)", "Bash(rm:*)", "Bash(sqlite3:*)"]
+      disallowedTools: ["Write", "Edit", "NotebookEdit", "WebFetch", "WebSearch"]
       maxTurns: 40
       effort: high
     instructions: |
@@ -151,7 +151,7 @@ agents:
     join: ["{maintainers_room}"]
     advanced_config:
       tools: [Read, Grep, Glob, Bash]
-      disallowedTools: ["Bash(gh:*)", "Bash(git push:*)", "Bash(git commit:*)", "Bash(curl:*)", "Bash(wget:*)", "Bash(security:*)", "Bash(rm:*)", "Bash(sqlite3:*)"]
+      disallowedTools: ["Write", "Edit", "NotebookEdit", "WebFetch", "WebSearch"]
       maxTurns: 30
       effort: high
     instructions: |
