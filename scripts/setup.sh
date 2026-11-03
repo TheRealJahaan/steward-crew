@@ -57,6 +57,10 @@ if [ "${1:-}" = "--token" ] || ! have_token; then
 else
   ok "already in the Keychain (run with --token to replace it)"
 fi
+if ! "$BIN/steward-ledger" check; then
+  warn "Make or regenerate the token on GitHub, copy it, then run:  ./scripts/setup.sh --token"
+  exit 1
+fi
 
 # 3. Register the Ledger with Switch ─────────────────────────────────────────
 say "3/5  Registering the Ledger with Switch"

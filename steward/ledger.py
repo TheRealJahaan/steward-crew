@@ -9,6 +9,7 @@ Everything it does is written to the audit log and can be undone.
     steward-ledger say TEXT     post a test message in the maintainers room
     steward-ledger sync         read GitHub once into Steward's database
     steward-ledger code         fetch the project's code for the agents to read
+    steward-ledger check        test the GitHub token against the repository
     steward-ledger run          stay in the room and do the job
 """
 
@@ -387,6 +388,35 @@ def cmd_sync(args) -> int:
     return 0
 
 
+def check_token(token: str, repo: str) -> tuple[bool, str]:
+    """Can this token read the repository's issues and see its pull requests?"""
+    if not token:
+        return False, "no GitHub token stored"
+    if not token.startswith(("github_pat_", "ghp_")):
+        return False, "that is not a GitHub personal access token (they start with github_pat_)"
+    gh = GitHub(token, repo)
+    try:
+        info = gh.request("GET", f"/repos/{repo}")
+        gh.request("GET", f"/repos/{repo}/issues", params={"per_page": 1})
+        gh.request("GET", f"/repos/{repo}/pulls", params={"per_page": 1})
+    except GitHubError as err:
+        if err.status == 401:
+            return False, "GitHub does not accept this token (expired, regenerated, or mistyped)"
+        if err.status == 404:
+            return False, f"this token cannot see {repo}: give it access to that repository"
+        return False, f"GitHub said {err.status}: {err}"
+    perms = (info or {}).get("permissions") or {}
+    note = "" if perms.get("push") or perms.get("triage") or perms.get("maintain") or perms.get("admin") else " (could not confirm write access; approve will tell you if it is missing)"
+    return True, f"the token works for {repo}{note}"
+
+
+def cmd_check(args) -> int:
+    policy = load_policy()
+    ok, message = check_token(github_token(), policy.repo)
+    print(("OK: " if ok else "Problem: ") + message)
+    return 0 if ok else 1
+
+
 def cmd_code(args) -> int:
     policy = load_policy()
     print(project.checkout(policy.repo, github_token()))
@@ -494,6 +524,7 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("sync", help="read GitHub once").set_defaults(func=cmd_sync)
     sub.add_parser("code", help="fetch the project's code for the agents").set_defaults(func=cmd_code)
+    sub.add_parser("check", help="test the GitHub token").set_defaults(func=cmd_check)
 
     s = sub.add_parser("run", help="stay in the room and work")
     s.add_argument("--quiet-start", action="store_true", help="don't post the hello message")

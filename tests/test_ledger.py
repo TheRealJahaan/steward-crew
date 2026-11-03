@@ -96,3 +96,11 @@ def test_card_lists_how_to_answer():
         p = db.get_proposal(conn, pid)
     card = Ledger(Policy(), None, None).card(p)
     assert f"[P{pid}] Assign #12 to @ben" in card and f"approve {pid}" in card
+
+
+def test_check_token_rejects_what_is_not_a_token():
+    from steward.ledger import check_token
+
+    assert check_token("", "o/r") == (False, "no GitHub token stored")
+    ok, message = check_token("hunter2", "o/r")
+    assert not ok and "github_pat_" in message
