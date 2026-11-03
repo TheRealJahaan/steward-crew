@@ -45,12 +45,12 @@ version: 1
 params:
   help_room:
     type: room
-    label: Community room (Discord #help)
+    label: "Community room (Discord #help)"
     description: Where contributors ask questions. Stu answers here.
     default: [help, "#help", "Steward Demo: help"]
   maintainers_room:
     type: room
-    label: Maintainers room (Slack #maintainers)
+    label: "Maintainers room (Slack #maintainers)"
     description: Where Steward, the Reviewer and the Ledger work with maintainers.
     default: [maintainers, "#maintainers", "Steward Maintainers: maintainers"]
   provider:
