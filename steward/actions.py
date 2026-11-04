@@ -65,8 +65,11 @@ def execute(conn: sqlite3.Connection, gh: GitHubWriter | None, proposal: dict[st
             undo.append({"op": "delete_comment", "id": cid})
 
     if kind == "assign":
+        before = conn.execute("SELECT status FROM claims WHERE issue = ? AND login = ?", (target, login)).fetchone()
         writer.add_assignee(target, login)
-        undo.append({"op": "remove_assignee", "login": login})
+        # Remember the claim as it was, so undo puts it back exactly: gone if
+        # this assignment made it, its old status otherwise.
+        undo.append({"op": "remove_assignee", "login": login, "claim_before": before["status"] if before else None})
         if text:
             post(text)
         issue = db.get_issue(conn, target) or {}
@@ -125,7 +128,10 @@ def reverse(conn: sqlite3.Connection, gh: GitHubWriter | None, proposal: dict[st
             writer.remove_assignee(target, step["login"])
             issue = db.get_issue(conn, target) or {}
             db.set_assignees(conn, target, [a for a in issue.get("assignees") or [] if a != step["login"]])
-            db.set_claim_status(conn, target, step["login"], "open")
+            if "claim_before" in step and step["claim_before"] is None:
+                conn.execute("DELETE FROM claims WHERE issue = ? AND login = ?", (target, step["login"]))
+            else:
+                db.set_claim_status(conn, target, step["login"], step.get("claim_before") or "open")
             done.append(f"unassigned @{step['login']}")
         elif op == "add_assignee":
             writer.add_assignee(target, step["login"])

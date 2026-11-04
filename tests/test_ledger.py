@@ -176,3 +176,21 @@ def test_old_database_gains_the_source_column(tmp_path):
     old.close()
     with db.session(path) as conn:
         assert db.get_proposal(conn, 1)["source"] == "github"
+
+
+def test_undo_leaves_no_claim_behind(fake_github):
+    """Undoing an assignment that made the claim removes the claim, so the
+    next morning's summary does not propose the same assignment again."""
+    with db.session() as conn:
+        seed_issue(conn, number=13)
+        fresh = db.add_proposal(conn, "assign", 13, login="TheRealJahaan", text="yours", reason="asked in Discord")
+        seed_issue(conn, number=12)
+        db.add_claim(conn, 12, "ben", db.now(), via="comment")
+        claimed = db.add_proposal(conn, "assign", 12, login="ben", text="yours", reason="asked first")
+    ledger = Ledger(Policy(), None, fake_github)
+    ledger.handle("Jahaan", f"approve {fresh} {claimed}")
+    ledger.handle("Jahaan", f"undo {fresh}")
+    ledger.handle("Jahaan", f"undo {claimed}")
+    with db.session() as conn:
+        assert db.claims(conn, issue=13) == []
+        assert [c["status"] for c in db.claims(conn, issue=12)] == ["open"]
