@@ -1,7 +1,7 @@
 """Write switch/steward-crew.template.yaml from the agents' briefs in agents/*.md.
 
 The briefs are the source; the template is what you paste into Switch Console
-(Templates, New template). Run this after editing a brief:
+(Templates, Import template). Run this after editing a brief:
 
     python scripts/build_template.py
 """
@@ -33,7 +33,7 @@ SKELETON = """\
 #   1. Post one message in Discord #help, so Switch makes it a room.
 #   2. In Slack #maintainers type  /invite @Agent Switch  so Switch makes it a room.
 #   3. Run scripts/setup.sh (it installs the `steward` command the agents use).
-# Then Switch Console: Templates, New template, paste this, Use.
+# Then Switch Console: Templates, Import template, paste this, Next. Open it, Use, Create.
 version: 1
 params:
   help_room:

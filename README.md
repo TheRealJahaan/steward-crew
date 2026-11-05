@@ -82,9 +82,9 @@ Switch, Claude Code signed in, and [uv](https://docs.astral.sh/uv/).
    ```console
    $ ~/.steward/bin/steward-ledger run
    ```
-4. **Create the AI crew.** Switch Console → Templates → New template, paste
-   [`switch/steward-crew.template.yaml`](switch/steward-crew.template.yaml), Use.
-   It creates Stu, Steward and the Reviewer and puts them in the two rooms.
+4. **Create the AI crew.** Switch Console → Templates → Import template, paste
+   [`switch/steward-crew.template.yaml`](switch/steward-crew.template.yaml), Next.
+   Open it, click Use, check the two rooms, and click Create. It creates Stu, Steward and the Reviewer and puts them in the two rooms.
    Then lock down their folders:
    ```console
    $ ~/.steward/bin/steward-ledger crew
