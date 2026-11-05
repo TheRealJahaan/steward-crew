@@ -4,6 +4,8 @@
 
 > AI proposes, the Ledger acts, a maintainer decides.
 
+**Demo video (3 min):** https://youtu.be/yIe22a9f0eM
+
 Popular projects drown in "can I work on this?" comments, abandoned claims, three
 people fixing the same issue, and pull requests nobody asked for, some of them
 unreviewed AI output. Steward Crew takes that work off the maintainers. It never
