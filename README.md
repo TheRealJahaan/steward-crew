@@ -37,6 +37,21 @@ does anything on GitHub that a maintainer did not approve.
                   GitHub: assign, comment, label, close  (logged, undoable)
 ```
 
+## How it uses Switch
+
+- **Agents:** Stu, Steward and the Reviewer are Claude Code agents, all created by one
+  Switch template ([`switch/steward-crew.template.yaml`](switch/steward-crew.template.yaml))
+  with their instructions and tools. The Ledger is a custom
+  always-on agent in plain Python, registered with the local Switch server.
+- **Channels:** Switch's Discord bridge turns the public `#help` channel into a room
+  with Stu in it. Switch's Slack bridge turns the private `#maintainers` channel into a
+  room with Steward, the Reviewer and the Ledger. Both are rooms of one Switch.
+- **The Ledger in the room:** it reads every message in `#maintainers` over Switch's
+  agent WebSocket, posts the cards, and takes orders only from maintainers, never from
+  agents. When the Reviewer tried `@ledger approve 11 12`, Switch's addressing rules
+  refused it.
+- **Running it:** see [Run it](#run-it) below.
+
 ## Why it is safe to let AI near your contributors
 
 - **The AI cannot touch GitHub.** The agents get read, search and a shell for the
