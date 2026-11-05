@@ -18,24 +18,7 @@ does anything on GitHub that a maintainer did not approve.
 | **Reviewer (AI)** | Slack `#maintainers` | Reads a flagged pull request against its issue and the code, and drafts a review or a polite close. |
 | **Ledger** | Slack `#maintainers` | Not an AI. The only part that holds a GitHub token. Posts each proposal as a numbered card and acts only when a maintainer types `approve 7`. Logs everything; `undo 7` reverses it. |
 
-```
- Discord #help (public)              Slack #maintainers (private)
-
- contributor ──▶ Stu (AI)            Steward (AI)      Reviewer (AI)
-                   │                      │                  │
-                   └────── propose ───────┴───── propose ────┘
-                                    │
-                                    ▼
-                  steward: claims, pull requests, rules (read-only for AI)
-                                    │
-                                    ▼
-                  Ledger posts  "[P7] Assign #12 to @ben … approve 7"
-                                    │
-                         a maintainer types  "approve 7"
-                                    │
-                                    ▼
-                  GitHub: assign, comment, label, close  (logged, undoable)
-```
+![Only a maintainer's approval reaches GitHub: the three AI agents file proposals, the Ledger posts a numbered card, and only a maintainer's approve makes it act on GitHub](docs/how-it-works.png)
 
 ## How it uses Switch
 
